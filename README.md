@@ -2,8 +2,8 @@
 
 Created by Antonin Bruneau (abruneau@cloudera.com)
 
-This notebook demonstrate how create a Gradient-boosted tree classifier 
-to predict wine quality based on caracteristics
+This notebook demonstrates how to create a Gradient-boosted tree classifier 
+to predict wine quality based on characteristics
 
 Steps:
 1. Open a terminal and run setup.sh
