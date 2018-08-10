@@ -1,2 +1,2 @@
-hadoop fs -put WineNewGBTDataSet.csv /tmp/
+hadoop fs -put data/WineNewGBTDataSet.csv /tmp/
 pip install seaborn
