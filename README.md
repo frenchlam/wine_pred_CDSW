@@ -8,7 +8,8 @@ to predict wine quality based on characteristics.
 Used: Python, Spark, seaborn
 
 Steps:
-1. Open a terminal and run setup.sh
+1. Set CDSW_DS_API_URL = http://cdsw.cloudera.tellarius.eu/api/altus-ds-1/ds for your project
+2. Open a terminal and run setup.sh
 3. In your python session run annalyse.py
 4. Run an experiment with fit.py
   * params: numTrees, maxDepth, impurity (e.g. 10 10 gini)
