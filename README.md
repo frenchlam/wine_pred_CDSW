@@ -10,7 +10,7 @@ Used: Python, Spark, seaborn
 Steps:
 1. Set CDSW_DS_API_URL = http://cdsw.cloudera.tellarius.eu/api/altus-ds-1/ds for your project
 2. Open a terminal and run setup.sh
-3. In your python session run annalyse.py
+3. In your python session run analyse.py
 4. Run an experiment with fit.py
   * params: numTrees, maxDepth, impurity (e.g. 10 10 gini)
   * add to project spark_rf.tar
@@ -20,3 +20,4 @@ Steps:
 6. When finished, run cleanup.sh in the terminal
 
 Recommended Session Sizes: 2 CPU, 4 GB RAM
+# wine_pred_CDSW
