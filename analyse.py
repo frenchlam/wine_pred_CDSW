@@ -28,6 +28,11 @@ conf = SparkConf().setAppName("wine-quality-prediction")
 sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
 
+#set path to data
+data_path = "/tmp/mlamairesse"
+data_file = "WineNewGBTDataSet.csv"
+
+
 schema = StructType([StructField("fixedAcidity", DoubleType(), True),     
   StructField("volatileAcidity", DoubleType(), True),     
   StructField("citricAcid", DoubleType(), True),     
@@ -42,7 +47,7 @@ schema = StructType([StructField("fixedAcidity", DoubleType(), True),
   StructField("Quality", StringType(), True)
 ])
 
-wine_data_raw = sqlContext.read.format('com.databricks.spark.csv').option("delimiter",";").load('/tmp/WineNewGBTDataSet.csv', schema = schema)
+wine_data_raw = sqlContext.read.format('com.databricks.spark.csv').option("delimiter",";").load(data_path +'/'+data_file, schema = schema)
 wine_data_raw.head()
 
 # # Basic DataFrame operations
@@ -52,8 +57,6 @@ wine_data_raw.head()
 count = wine_data_raw.count()
 
 wine_data_raw.createOrReplaceTempView("wine")
-
-
 qualities = sqlContext.sql("select distinct(Quality), count(*) from wine GROUP BY Quality")
 qualities.show()
 
@@ -89,9 +92,14 @@ poor_wines = wine_data.filter(wine_data.Quality == 'Poor').count()
 # 
 # [DataFrame#sample() documentation](http://people.apache.org/~pwendell/spark-releases/spark-1.5.0-rc1-docs/api/python/pyspark.sql.html#pyspark.sql.DataFrame.sample)
 
+# Note: toPandas() => brings data localy !!!
 sample_data = wine_data.sample(False, 0.5, 83).toPandas()
 sample_data.transpose().head(21)
-# 
+
+sc.stop()
+
+
+
 # ## Feature Distributions
 # 
 # We want to examine the distribution of our features, so start with them one at a time.

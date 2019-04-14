@@ -7,10 +7,19 @@ conf = SparkConf().setAppName("wine-quality-build-model")
 sc = SparkContext(conf=conf)
 sqlContext = SQLContext(sc)
 
+#set path to data
+data_path = "/tmp/mlamairesse"
+data_file = "WineNewGBTDataSet.csv"
+
 # # Get params
+# Declare parameters 
 param_numTrees= int(sys.argv[1])
 param_maxDepth=int(sys.argv[2])
 param_impurity=sys.argv[3]
+
+#param_numTrees= 10
+#param_maxDepth= 15
+#param_impurity= "gini"
 
 cdsw.track_metric("numTrees",param_numTrees)
 cdsw.track_metric("maxDepth",param_maxDepth)
@@ -50,7 +59,7 @@ schema = StructType([StructField("fixedAcidity", DoubleType(), True),
   StructField("Quality", StringType(), True)
 ])
 
-wine_data_raw = sqlContext.read.format('com.databricks.spark.csv').option("delimiter",";").load('/tmp/WineNewGBTDataSet.csv', schema = schema)
+wine_data_raw = sqlContext.read.format('com.databricks.spark.csv').option("delimiter",";").load(data_path+'/'+data_file, schema = schema)
 
 # Remove unvalid data
 wine_data = wine_data_raw.filter(wine_data_raw.Quality != "1")

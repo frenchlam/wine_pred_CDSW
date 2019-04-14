@@ -9,27 +9,31 @@ spark = SparkSession.builder \
     
 model = PipelineModel.load("file:///home/cdsw/models/spark")
 
-features = ['fixedAcidity', 
-             "volatileAcidity", 
-             "citricAcid", 
-             "residualSugar", 
-             "chlorides", 
-             "freeSulfurDioxide", 
-             "totalSulfurDioxide", 
-             "density", 
-             "pH", 
-             "sulphates", 
-             "Alcohol"]
+
+schema = StructType([StructField("fixedAcidity", DoubleType(), True),     
+  StructField("volatileAcidity", DoubleType(), True),     
+  StructField("citricAcid", DoubleType(), True),     
+  StructField("residualSugar", DoubleType(), True),     
+  StructField("chlorides", DoubleType(), True),     
+  StructField("freeSulfurDioxide", DoubleType(), True),     
+  StructField("totalSulfurDioxide", DoubleType(), True),     
+  StructField("density", DoubleType(), True),     
+  StructField("pH", DoubleType(), True),     
+  StructField("sulphates", DoubleType(), True),     
+  StructField("Alcohol", DoubleType(), True)
+])
 
 
 def predict(args):
-  wine=args["feature"].split(";")
-  feature = spark.createDataFrame([map(float,wine[:11])], features)
-  result=model.transform(feature).collect()[0].prediction
+  split=args["feature"].split(";")
+  features=[list(map(float,split[:11]))]
+  features_df = spark.createDataFrame(features, schema)
+  result=model.transform(features_df).collect()[0].prediction
   if result == 1.0:
     return {"result": "Bad"}
   else:
     return {"result" : "Good"}
   
 # pre-heat the model
-predict({"feature": "7.4;0.7;0;1.9;0.076;11;34;0.9978;3.51;0.56;9.4"})
+predict({"feature": "7.4;0.7;0;1.9;0.076;11;34;0.9978;3.51;0.56;9.4"}) #bad
+predict({"feature": "7.3;0.65;0.0;1.2;0.065;15.0;21.0;0.9946;3.39;0.47;10.0"}) #good
