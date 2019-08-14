@@ -39,15 +39,15 @@ param_impurity= "gini"
 #     quality: discrete
 
 
-# # Load the data (From File )
-# Create Spark Session
+# # Read data from File
 spark = SparkSession \
   .builder \
   .master('yarn') \
   .appName('wine-quality-build-model') \
   .getOrCreate()
 
-#Define Schema
+
+# # Read from File
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
   StructField("volatileacidity", DoubleType(), True),     
   StructField("citricacid", DoubleType(), True),     
@@ -62,33 +62,31 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("quality", StringType(), True)
 ])
 
+
 data_path = "/tmp/mlamairesse"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
 
 
+"""
+# # Read data from Hive
+spark = SparkSession \
+  .builder \
+  .master('yarn') \
+  .enableHiveSupport() \
+  .appName('wine-quality-build-model') \
+  .getOrCreate()
 
-# # Load the data (From Hive)
-#spark = SparkSession \
-#  .builder \
-#  .master('yarn') \
-#  .enableHiveSupport() \
-#  .appName('wine-quality-build-model') \
-#  .getOrCreate()
 
-#wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
-
+wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
+"""
 
 # Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
 
 
 # # Build a classification model using MLLib
-# # Step 1 Split dataset into train and validation 
-(trainingData, testData) = wine_data.randomSplit([0.7, 0.3])
-
-
-# # Step 2 : split label and feature and encode for ML Lib
+# # Pipeline prep
 # Label encoding and Feature indexor (assembles feature in format appropriate for Spark ML)
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml.feature import VectorAssembler
@@ -109,31 +107,71 @@ featureIndexer = VectorAssembler(
     outputCol = 'features')
 
 
-# # Step 3 : 
-# # Prepare Classifier ( Random Forest in this case )
+# # Fit a RandomForestClassifier
 from pyspark.ml import Pipeline
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.classification import RandomForestClassifier
 
-# # Grid Search - Spark ML way
-# using Grid Search and cross validation
+#Test/Train split
+(trainingData, testData) = wine_data.randomSplit([0.7, 0.3])
 
+"""
+# # Grid Search - quick and dirty
+results=[]
+run=1
+for tree in param_numTrees:
+  for depth in param_maxDepth:
+    #pipeline for model Training
+    RFclassifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features', 
+                                      numTrees = tree, 
+                                      maxDepth = depth,  
+                                      impurity = param_impurity)
+    pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
+    model = pipeline.fit(trainingData)
+
+    #model Evaluation
+    predictions = model.transform(testData)
+    evaluator = BinaryClassificationEvaluator()
+    auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
+
+    #write results
+    dict_result = {}
+    dict_result['numTrees'] = tree
+    dict_result['maxDepth'] = depth
+    dict_result['auroc'] = auroc
+    results.append(dict_result)
+    
+    #output run perf
+    print("run {:d} - auroc:{:f}".format(run,auroc))
+    run += 1
+
+# Get best run
+best_run = results[0]
+for result in results:
+  if best_run['auroc'] < result['auroc']:
+    best_run=result
+
+# # Evaluation of FINAL model performance
+predictions = model.transform(testData)
+auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
+aupr = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
+print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
+"""  
+
+# # Grid Search - Spark ML way
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
-#Basic model definition
-RFclassifier = RandomForestClassifier(labelCol = 'label', 
-                                      featuresCol = 'features',  
+RFclassifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features',  
                                       impurity = param_impurity)
 
 pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
 
-
-#Define test configutations (to be evaluated in Grid)
+#Define test configutation
 paramGrid = ParamGridBuilder()\
    .addGrid(RFclassifier.maxDepth, param_maxDepth )\
    .addGrid(RFclassifier.numTrees, param_numTrees )\
    .build()
 
-#Defing metric by wich the model will be evaluated
+#metric by wich the model will be evaluated
 evaluator = BinaryClassificationEvaluator(metricName='areaUnderROC')
 
 crossval = CrossValidator(estimator=pipeline,
@@ -142,26 +180,22 @@ crossval = CrossValidator(estimator=pipeline,
                           parallelism=2, #number of models run in ||
                           numFolds=2) 
 
-#fit model 
-#note : returns the best model
 cvModel = crossval.fit(trainingData)
+# note : returns the best model.
 
-#show performande of runs 
-cvModel.avgMetrics
 
 # # Evaluation of model performance on validation dataset
-# prepare predictions on test dataset
+evaluator = BinaryClassificationEvaluator()
 predictions = cvModel.transform(testData)
 
-evaluator = BinaryClassificationEvaluator()
 auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
 aupr = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
 
-# # Save Model for deployement 
-# Model is 3rd stage of the pipeline
-cvModel.bestModel.stages[2].write().overwrite().save("models/spark")
+"""#uncomment for Experiments
+# # Save model to project
+model.write().overwrite().save("models/spark")
 
 !rm -r -f models/spark
 !rm -r -f models/spark_rf.tar
@@ -174,7 +208,7 @@ cvModel.bestModel.stages[2].write().overwrite().save("models/spark")
 cdsw.track_metric("auroc", auroc)
 cdsw.track_metric("aupr", aupr)
 cdsw.track_file("models/spark_rf.tar")
-
+"""
 
 spark.stop()
 
