@@ -2,7 +2,6 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-
 """ 
 #- uncomment for experiments 
 # # Experiments 
@@ -23,7 +22,54 @@ param_maxDepth = [5,10,15]
 param_impurity= "gini"
 
 
-# # Set up Spark Session and read data
+# # Data Schema 
+#
+#     Fields:
+#     fixedacidity: numeric
+#     volatileacidity: numeric
+#     citricacid: numeric
+#     residualSugar: numeric
+#     chlorides: numeric
+#     freesulfurDioxide: numeric
+#     totalsulfurDioxide: numeric
+#     density: numeric
+#     ph: numeric
+#     sulphates: numeric
+#     alcohol: numeric
+#     quality: discrete
+
+
+# # Read data from File
+spark = SparkSession \
+  .builder \
+  .master('yarn') \
+  .appName('wine-quality-build-model') \
+  .getOrCreate()
+
+
+# # Read from File
+schema = StructType([StructField("fixedacidity", DoubleType(), True),     
+  StructField("volatileacidity", DoubleType(), True),     
+  StructField("citricacid", DoubleType(), True),     
+  StructField("residualsugar", DoubleType(), True),     
+  StructField("chlorides", DoubleType(), True),     
+  StructField("freesulfurdioxide", DoubleType(), True),     
+  StructField("totalsulfurdioxide", DoubleType(), True),     
+  StructField("density", DoubleType(), True),     
+  StructField("ph", DoubleType(), True),     
+  StructField("sulphates", DoubleType(), True),     
+  StructField("alcohol", DoubleType(), True),     
+  StructField("quality", StringType(), True)
+])
+
+
+data_path = "/tmp/mlamairesse"
+data_file = "WineNewGBTDataSet.csv"
+wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
+
+
+"""
+# # Read data from Hive
 spark = SparkSession \
   .builder \
   .master('yarn') \
@@ -32,48 +78,11 @@ spark = SparkSession \
   .getOrCreate()
 
 
-# # Data Schema 
-#
-#     Fields:
-#     fixedAcidity: numeric
-#     volatileAcidity: numeric
-#     citricAcid: numeric
-#     residualSugar: numeric
-#     chlorides: numeric
-#     freeSulfurDioxide: numeric
-#     totalSulfurDioxide: numeric
-#     density: numeric
-#     pH: numeric
-#     sulphates: numeric
-#     Alcohol: numeric
-#     Quality: discrete
-
-schema = StructType([StructField("fixedAcidity", DoubleType(), True),     
-  StructField("volatileAcidity", DoubleType(), True),     
-  StructField("citricAcid", DoubleType(), True),     
-  StructField("residualSugar", DoubleType(), True),     
-  StructField("chlorides", DoubleType(), True),     
-  StructField("freeSulfurDioxide", DoubleType(), True),     
-  StructField("totalSulfurDioxide", DoubleType(), True),     
-  StructField("density", DoubleType(), True),     
-  StructField("pH", DoubleType(), True),     
-  StructField("sulphates", DoubleType(), True),     
-  StructField("Alcohol", DoubleType(), True),     
-  StructField("Quality", StringType(), True)
-])
-
-#Read from File
-#data_path = "/tmp/mlamairesse"
-#data_file = "WineNewGBTDataSet.csv"
-#wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
-
-#Read from Hive
-spark.sql('''Select * from default.wineds_ext''').show()
-
+wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
+"""
 
 # Cleanup - Remove invalid data
-wine_data = wine_data_raw.filter(wine_data_raw.Quality != "1")
-
+wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
 
 
 # # Build a classification model using MLLib
@@ -82,19 +91,19 @@ wine_data = wine_data_raw.filter(wine_data_raw.Quality != "1")
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml.feature import VectorAssembler
 
-labelIndexer = StringIndexer(inputCol = 'Quality', outputCol = 'label')
+labelIndexer = StringIndexer(inputCol = 'quality', outputCol = 'label')
 featureIndexer = VectorAssembler(
-    inputCols = ['fixedAcidity', 
-                 "volatileAcidity", 
-                 "citricAcid", 
-                 "residualSugar", 
+    inputCols = ['fixedacidity', 
+                 "volatileacidity", 
+                 "citricacid", 
+                 "residualsugar", 
                  "chlorides", 
-                 "freeSulfurDioxide", 
-                 "totalSulfurDioxide", 
+                 "freesulfurdioxide", 
+                 "totalsulfurdioxide", 
                  "density", 
-                 "pH", 
+                 "ph", 
                  "sulphates", 
-                 "Alcohol"],
+                 "alcohol"],
     outputCol = 'features')
 
 
@@ -106,18 +115,18 @@ from pyspark.ml.classification import RandomForestClassifier
 #Test/Train split
 (trainingData, testData) = wine_data.randomSplit([0.7, 0.3])
 
-
-# # Grid Search
+"""
+# # Grid Search - quick and dirty
 results=[]
 run=1
 for tree in param_numTrees:
   for depth in param_maxDepth:
     #pipeline for model Training
-    classifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features', 
+    RFclassifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features', 
                                       numTrees = tree, 
                                       maxDepth = depth,  
                                       impurity = param_impurity)
-    pipeline = Pipeline(stages=[labelIndexer, featureIndexer, classifier])
+    pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
     model = pipeline.fit(trainingData)
 
     #model Evaluation
@@ -141,24 +150,50 @@ best_run = results[0]
 for result in results:
   if best_run['auroc'] < result['auroc']:
     best_run=result
-  
 
-#
-# Create final model
-classifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features', 
-                                    numTrees = best_run['numTrees'], 
-                                    maxDepth = best_run['maxDepth'],  
-                                    impurity = param_impurity)
-pipeline = Pipeline(stages=[labelIndexer, featureIndexer, classifier])
-model = pipeline.fit(trainingData)
-
-# # Evaluation of model performance
+# # Evaluation of FINAL model performance
 predictions = model.transform(testData)
+auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
+aupr = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
+print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
+"""  
+
+# # Grid Search - Spark ML way
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
+RFclassifier = RandomForestClassifier(labelCol = 'label', featuresCol = 'features',  
+                                      impurity = param_impurity)
+
+pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
+
+#Define test configutation
+paramGrid = ParamGridBuilder()\
+   .addGrid(RFclassifier.maxDepth, param_maxDepth )\
+   .addGrid(RFclassifier.numTrees, param_numTrees )\
+   .build()
+
+#metric by wich the model will be evaluated
+evaluator = BinaryClassificationEvaluator(metricName='areaUnderROC')
+
+crossval = CrossValidator(estimator=pipeline,
+                          estimatorParamMaps=paramGrid,
+                          evaluator=evaluator,
+                          parallelism=2, #number of models run in ||
+                          numFolds=2) 
+
+cvModel = crossval.fit(trainingData)
+# note : returns the best model.
+
+
+# # Evaluation of model performance on validation dataset
+evaluator = BinaryClassificationEvaluator()
+predictions = cvModel.transform(testData)
+
 auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
 aupr = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
 
+"""#uncomment for Experiments
 # # Save model to project
 model.write().overwrite().save("models/spark")
 
@@ -168,7 +203,7 @@ model.write().overwrite().save("models/spark")
 !hdfs dfs -get ./models/spark models/
 !tar -cvf models/spark_rf.tar models/spark
 
-"""#uncomment for Experiments
+
 # Track metrics in Experiments view
 cdsw.track_metric("auroc", auroc)
 cdsw.track_metric("aupr", aupr)
