@@ -2,41 +2,27 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-""" 
+'''
 #- uncomment for experiments 
 # # Experiments 
 # Declare parameters
-param_numTrees= list(sys.argv[1])
-param_maxDepth= list(sys.argv[2])
+import ast #required to in order to parse arguements a lists
+import sys
+param_numTrees= ast.literal_eval(sys.argv[1])
+param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity=sys.argv[3]
 
-#Track Metrics in CDSW
-cdsw.track_metric("numTrees",param_numTrees)
-cdsw.track_metric("maxDepth",param_maxDepth)
-cdsw.track_metric("impurity",param_impurity)
-"""
 
-# comment out for experiments
+#Track Metrics in CDSW
+cdsw.track_metric("numTrees",str(param_numTrees))
+cdsw.track_metric("maxDepth",str(param_maxDepth))
+cdsw.track_metric("impurity",param_impurity)
+'''
+
+# comment out when using experiments
 param_numTrees = [10,15,20]
 param_maxDepth = [5,10,15]
 param_impurity= "gini"
-
-
-# # Data Schema 
-#
-#     Fields:
-#     fixedacidity: numeric
-#     volatileacidity: numeric
-#     citricacid: numeric
-#     residualSugar: numeric
-#     chlorides: numeric
-#     freesulfurDioxide: numeric
-#     totalsulfurDioxide: numeric
-#     density: numeric
-#     ph: numeric
-#     sulphates: numeric
-#     alcohol: numeric
-#     quality: discrete
 
 
 # # Load the data (From File )
@@ -95,17 +81,9 @@ from pyspark.ml.feature import VectorAssembler
 
 labelIndexer = StringIndexer(inputCol = 'quality', outputCol = 'label')
 featureIndexer = VectorAssembler(
-    inputCols = ['fixedacidity', 
-                 "volatileacidity", 
-                 "citricacid", 
-                 "residualsugar", 
-                 "chlorides", 
-                 "freesulfurdioxide", 
-                 "totalsulfurdioxide", 
-                 "density", 
-                 "ph", 
-                 "sulphates", 
-                 "alcohol"],
+    inputCols = ["fixedacidity","volatileacidity","citricacid","residualsugar",
+                 "chlorides","freesulfurdioxide", "totalsulfurdioxide", "density", 
+                 "ph", "sulphates", "alcohol"],
     outputCol = 'features')
 
 
@@ -121,7 +99,7 @@ from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 #Basic model definition
 RFclassifier = RandomForestClassifier(labelCol = 'label', 
-                                      featuresCol = 'features',  
+                                      featuresCol = 'features', 
                                       impurity = param_impurity)
 
 pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
@@ -142,12 +120,12 @@ crossval = CrossValidator(estimator=pipeline,
                           parallelism=2, #number of models run in ||
                           numFolds=2) 
 
-#fit model 
-#note : returns the best model
+# fit model 
+# note : returns the best model
 cvModel = crossval.fit(trainingData)
 
 #show performande of runs 
-cvModel.avgMetrics
+print(cvModel.avgMetrics)
 
 # # Evaluation of model performance on validation dataset
 # prepare predictions on test dataset
@@ -155,13 +133,13 @@ predictions = cvModel.transform(testData)
 
 evaluator = BinaryClassificationEvaluator()
 auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
-aupr = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
+aupr =  evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
 
 # # Save Model for deployement 
 # Model is 3rd stage of the pipeline
-cvModel.bestModel.stages[2].write().overwrite().save("models/spark")
+cvModel.bestModel.write().overwrite().save("models/spark")
 
 !rm -r -f models/spark
 !rm -r -f models/spark_rf.tar
