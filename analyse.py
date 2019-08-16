@@ -1,8 +1,7 @@
 # # Load the data
 # 
 # We need to load data from a file in to a Spark DataFrame.
-# Each row is an wine, and each column contains
-# attributes of that wine.
+# Each row is a wine, and each column contains attributes of that wine.
 #
 #     Fields:
 #     fixedAcidity: numeric
@@ -17,22 +16,20 @@
 #     sulphates: numeric
 #     Alcohol: numeric
 #     Quality: discrete
-#     
-#     
 
-from pyspark import SparkContext, SparkConf
-from pyspark.sql import SQLContext
+# # Data Wrangling 
+
+# ## 1. Read data ( From Spark )
+from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-conf = SparkConf().setAppName("wine-quality-prediction")
-sc = SparkContext(conf=conf)
-sqlContext = SQLContext(sc)
+spark = SparkSession \
+  .builder \
+  .master('yarn') \
+  .appName('wine-quality-analysis') \
+  .getOrCreate()
 
-#set path to data
-data_path = "/tmp/mlamairesse"
-data_file = "WineNewGBTDataSet.csv"
-
-
+### Data does not have schema, so we declare it manually 
 schema = StructType([StructField("fixedAcidity", DoubleType(), True),     
   StructField("volatileAcidity", DoubleType(), True),     
   StructField("citricAcid", DoubleType(), True),     
@@ -47,40 +44,33 @@ schema = StructType([StructField("fixedAcidity", DoubleType(), True),
   StructField("Quality", StringType(), True)
 ])
 
-wine_data_raw = sqlContext.read.format('com.databricks.spark.csv').option("delimiter",";").load(data_path +'/'+data_file, schema = schema)
-wine_data_raw.head()
+data_path = "/tmp/wine_pred"
+data_file = "WineNewGBTDataSet.csv"
+wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
+wine_data_raw.show(3) 
 
-# # Basic DataFrame operations
-# 
-# Dataframes essentially allow you to express sql-like statements. We can filter, count, and so on. [DataFrame Operations documentation.](http://spark.apache.org/docs/latest/sql-programming-guide.html#dataframe-operations)
+# ### Basic DataFrame operations
+# Dataframes essentially allow you to express sql-like statements. 
+# We can filter, count, and so on. 
+# Documentation - (http://spark.apache.org/docs/latest/sql-programming-guide.html#dataframe-operations)
 
-count = wine_data_raw.count()
+"number of lines in dataset : {:d}".format(wine_data_raw.count())
 
+# ### Spark SQL - manipulate data as if it was a table 
 wine_data_raw.createOrReplaceTempView("wine")
-qualities = sqlContext.sql("select distinct(Quality), count(*) from wine GROUP BY Quality")
-qualities.show()
+spark.sql("select distinct(Quality), count(*) from wine GROUP BY Quality").show
 
 
-# Remove unvalid data
+# ### Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.Quality != "1")
-
+total_wines = wine_data.count()
 good_wines = wine_data.filter(wine_data.Quality == 'Excellent').count()
-poor_wines = wine_data.filter(wine_data.Quality == 'Poor').count()
+good_wines = wine_data.filter(wine_data.Quality == 'Poor').count()
 
-"total: %d, Good ones: %d, Poor ones: %d " % (count, good_wines, poor_wines)
+"Wines total: {}, Good : {}, Poor : {}".format(total_wines,good_wines,good_wines )
 
 
-
-# # Seaborn
-# 
-# Seaborn is a library for statistical visualization that is built on matplotlib.
-# 
-# Great support for:
-# * plotting distributions
-# * regression analyses
-# * plotting with categorical splitting
-# 
-# 
+# # 2. Data visualisation ( using mathplotlib and Seaborn)
 # ## Feature Visualization
 # 
 # The data vizualization workflow for large data sets is usually:
@@ -92,12 +82,11 @@ poor_wines = wine_data.filter(wine_data.Quality == 'Poor').count()
 # 
 # [DataFrame#sample() documentation](http://people.apache.org/~pwendell/spark-releases/spark-1.5.0-rc1-docs/api/python/pyspark.sql.html#pyspark.sql.DataFrame.sample)
 
-# Note: toPandas() => brings data localy !!!
+# ### Note: toPandas() => brings data localy !!!
 sample_data = wine_data.sample(False, 0.5, 83).toPandas()
 sample_data.transpose().head(21)
 
-sc.stop()
-
+spark.stop()
 
 
 # ## Feature Distributions

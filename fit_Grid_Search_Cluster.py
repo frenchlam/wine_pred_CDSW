@@ -25,14 +25,16 @@ param_maxDepth = [5,10,15]
 param_impurity= "gini"
 
 
-# # Load the data (From File )
-# Create Spark Session
+# # Start PySpark Session
 spark = SparkSession \
   .builder \
   .master('yarn') \
   .appName('wine-quality-build-model') \
   .getOrCreate()
 
+
+# ### Load the data (From File )
+  '''
 #Define Schema
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
   StructField("volatileacidity", DoubleType(), True),     
@@ -45,24 +47,15 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("ph", DoubleType(), True),     
   StructField("sulphates", DoubleType(), True),     
   StructField("alcohol", DoubleType(), True),     
-  StructField("quality", StringType(), True)
-])
+  StructField("quality", StringType(), True)])
 
-data_path = "/tmp/mlamairesse"
-data_file = "WineNewGBTDataSet.csv"
-wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
+data_path = "/tmp/wine_pred/WineNewGBTDataSet.csv"
+wine_data_raw = spark.read.csv(ddata_path, schema=schema,sep=';')
 
+'''
 
-
-# # Load the data (From Hive)
-#spark = SparkSession \
-#  .builder \
-#  .master('yarn') \
-#  .enableHiveSupport() \
-#  .appName('wine-quality-build-model') \
-#  .getOrCreate()
-
-#wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
+# ### Or Get data from Hive
+wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
 
 
 # Cleanup - Remove invalid data

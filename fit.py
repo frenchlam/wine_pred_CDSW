@@ -20,14 +20,16 @@ param_maxDepth= 15
 param_impurity= "gini"
 
 
-# # Load the data (From File)
-# Create Spark Session
+
+# # Create Spark Session
 spark = SparkSession \
   .builder \
   .master('yarn') \
   .appName('wine-quality-build-model') \
   .getOrCreate()
 
+# # Load the data 
+# ### From File
 
 # Define Schema : 
 #     fixedacidity: numeric
@@ -58,10 +60,14 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
 ])
 
 #set path to data
-data_path = "/tmp/mlamairesse"
+data_path = "/tmp/wine_pred"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
-    
+
+# ### or from Hive 
+wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
+
+
 # Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
 
