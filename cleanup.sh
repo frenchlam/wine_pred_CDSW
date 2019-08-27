@@ -1,1 +1,0 @@
-hadoop fs -rm /tmp/WineNewGBTDataSet.csv

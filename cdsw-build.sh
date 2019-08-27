@@ -1,5 +1,6 @@
 #!/bin/bash
 
+pip3 install sklearn
 
 if [ -d "models" ] 
 then

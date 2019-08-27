@@ -3,20 +3,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
 '''
-#- uncomment for experiments 
+#- uncomment for experiments
 # # Experiments 
-# Declare parameters
+# ### Declare parameters
 import ast #required to in order to parse arguements a lists
 import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity=sys.argv[3]
-
-
-#Track Metrics in CDSW
-cdsw.track_metric("numTrees",str(param_numTrees))
-cdsw.track_metric("maxDepth",str(param_maxDepth))
-cdsw.track_metric("impurity",param_impurity)
 '''
 
 # comment out when using experiments
@@ -25,7 +19,8 @@ param_maxDepth = [5,10,15]
 param_impurity= "gini"
 
 
-# # Start PySpark Session
+# # Load Date
+# ### Start PySpark Session
 spark = SparkSession \
   .builder \
   .master('yarn') \
@@ -34,7 +29,8 @@ spark = SparkSession \
 
 
 # ### Load the data (From File )
-  '''
+
+'''
 #Define Schema
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
   StructField("volatileacidity", DoubleType(), True),     
@@ -58,17 +54,17 @@ wine_data_raw = spark.read.csv(ddata_path, schema=schema,sep=';')
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
 
 
-# Cleanup - Remove invalid data
+# ### Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
 
 
 # # Build a classification model using MLLib
-# # Step 1 Split dataset into train and validation 
+# ## Step 1 Split dataset into train and validation 
 (trainingData, testData) = wine_data.randomSplit([0.7, 0.3])
 
 
-# # Step 2 : split label and feature and encode for ML Lib
-# Label encoding and Feature indexor (assembles feature in format appropriate for Spark ML)
+# ## Step 2 : split label and feature and encode for ML Lib
+# ### Label encoding and Feature indexor (assembles feature in format appropriate for Spark ML)
 from pyspark.ml.feature import StringIndexer
 from pyspark.ml.feature import VectorAssembler
 
@@ -80,17 +76,14 @@ featureIndexer = VectorAssembler(
     outputCol = 'features')
 
 
-# # Step 3 : 
-# # Prepare Classifier ( Random Forest in this case )
+# ## Step 3 : Prepare Classifier ( Random Forest in this case )
 from pyspark.ml import Pipeline
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.classification import RandomForestClassifier
 
-# # Grid Search - Spark ML way
-# using Grid Search and cross validation
-
+# ## Grid Search - Spark ML way
+# ### using Grid Search and cross validation
 from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
-#Basic model definition
 RFclassifier = RandomForestClassifier(labelCol = 'label', 
                                       featuresCol = 'features', 
                                       impurity = param_impurity)
@@ -98,30 +91,29 @@ RFclassifier = RandomForestClassifier(labelCol = 'label',
 pipeline = Pipeline(stages=[labelIndexer, featureIndexer, RFclassifier])
 
 
-#Define test configutations (to be evaluated in Grid)
+# ### Define test configutations (to be evaluated in Grid)
 paramGrid = ParamGridBuilder()\
    .addGrid(RFclassifier.maxDepth, param_maxDepth )\
    .addGrid(RFclassifier.numTrees, param_numTrees )\
    .build()
 
-#Defing metric by wich the model will be evaluated
+# ### Defing metric by wich the model will be evaluated
 evaluator = BinaryClassificationEvaluator(metricName='areaUnderROC')
 
 crossval = CrossValidator(estimator=pipeline,
                           estimatorParamMaps=paramGrid,
                           evaluator=evaluator,
-                          parallelism=2, #number of models run in ||
+                          parallelism=3, #number of models run in ||
                           numFolds=2) 
 
-# fit model 
-# note : returns the best model
+# ### fit model (note : returns the best model)
 cvModel = crossval.fit(trainingData)
 
-#show performande of runs 
+# ### show performande of runs 
 print(cvModel.avgMetrics)
 
 # # Evaluation of model performance on validation dataset
-# prepare predictions on test dataset
+# #### prepare predictions on test dataset
 predictions = cvModel.transform(testData)
 
 evaluator = BinaryClassificationEvaluator()
@@ -130,8 +122,8 @@ aupr =  evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
 
-# # Save Model for deployement 
-# Model is 3rd stage of the pipeline
+# ## Save Model for deployement 
+# #### Model is 3rd stage of the pipeline
 cvModel.bestModel.write().overwrite().save("models/spark")
 
 !rm -r -f models/spark
@@ -141,11 +133,11 @@ cvModel.bestModel.write().overwrite().save("models/spark")
 !tar -cvf models/spark_rf.tar models/spark
 
 
-# Track metrics in Experiments view
+# ### Track metrics in Experiments view
 cdsw.track_metric("auroc", auroc)
-cdsw.track_metric("aupr", aupr)
+cdsw.track_metric("numTrees",cvModel.bestModel.stages[2].getNumTrees)
+cdsw.track_metric("maxDepth",str(param_maxDepth))
+
 cdsw.track_file("models/spark_rf.tar")
 
-
 spark.stop()
-
