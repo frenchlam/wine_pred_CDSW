@@ -10,15 +10,16 @@ import pandas as pd
 # ### Declare parameters
 import ast #required to in order to parse arguements a lists
 import sys
-param_estimators= ast.literal_eval(sys.argv[1])
+param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 
 
 '''
 # comment out when using experiments
-param_estimators = [70,80,90]
+param_numTrees = [70,80,90]
 param_maxDepth = [5,10,15]
 '''
+
 
 # ### Load the data (From File )
 input_file = "data/WineNewGBTDataSet.csv"
@@ -69,7 +70,7 @@ from sklearn.model_selection import GridSearchCV
 rfc = RandomForestClassifier(random_state=10, n_jobs=-1)
 
 GS_params = { 
-    'n_estimators': param_estimators,
+    'n_estimators': param_numTrees,
     'max_depth' : param_maxDepth
 }
 
@@ -109,7 +110,7 @@ average_precision = average_precision_score(y_true, y_pred)
 print("The AUROC is {:f} and the Average Precision is {:f}".format(auroc, average_precision))
 
 # ### Track Metrics in CDSW
-cdsw.track_metric("estimators", CV_rfc.best_params_['n_estimators'])
+cdsw.track_metric("numTrees", CV_rfc.best_params_['n_estimators'])
 cdsw.track_metric("maxDepth", CV_rfc.best_params_['max_depth'])
 cdsw.track_metric("auroc", auroc)
 

@@ -2,22 +2,23 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-'''
-#- uncomment for experiments
-# # Experiments 
+
+#Uncomment for experiments
+#Experiments 
 # ### Declare parameters
 import ast #required to in order to parse arguements a lists
 import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
-param_impurity=sys.argv[3]
-'''
-
-# comment out when using experiments
-param_numTrees = [10,15,20]
-param_maxDepth = [5,10,15]
 param_impurity= "gini"
 
+
+"""
+#comment when using experiments
+param_numTrees = [10,15,20]
+param_maxDepth = [5,10,15]
+param_impurity = "gini"
+"""
 
 # # Load Date
 # ### Start PySpark Session
@@ -30,7 +31,6 @@ spark = SparkSession \
 
 # ### Load the data (From File )
 
-'''
 #Define Schema
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
   StructField("volatileacidity", DoubleType(), True),     
@@ -46,13 +46,12 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("quality", StringType(), True)])
 
 data_path = "/tmp/wine_pred/WineNewGBTDataSet.csv"
-wine_data_raw = spark.read.csv(ddata_path, schema=schema,sep=';')
+wine_data_raw = spark.read.csv(data_path, schema=schema,sep=';')
 
-'''
-
+"""
 # ### Or Get data from Hive
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
-
+"""
 
 # ### Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
@@ -135,8 +134,8 @@ cvModel.bestModel.write().overwrite().save("models/spark")
 
 # ### Track metrics in Experiments view
 cdsw.track_metric("auroc", auroc)
-cdsw.track_metric("numTrees",cvModel.bestModel.stages[2].getNumTrees)
-cdsw.track_metric("maxDepth",str(param_maxDepth))
+cdsw.track_metric("numTrees",cvModel.bestModel.stages[2]._java_obj.getNumTrees())
+cdsw.track_metric("maxDepth",cvModel.bestModel.stages[2]._java_obj.getMaxDepth())
 
 cdsw.track_file("models/spark_rf.tar")
 
