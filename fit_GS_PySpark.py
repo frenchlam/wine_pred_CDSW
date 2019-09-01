@@ -2,7 +2,7 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-"""
+
 #Uncomment for experiments
 #Experiments 
 # ### Declare parameters
@@ -11,13 +11,13 @@ import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity= "gini"
-"""
 
+"""
 #comment out when using experiments
 param_numTrees = [10,15,20]
 param_maxDepth = [5,10,15]
 param_impurity = "gini"
-
+"""
 
 # # Load Date
 # ### Start PySpark Session
