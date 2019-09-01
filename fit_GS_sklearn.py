@@ -4,7 +4,7 @@ import cdsw
 import numpy as np
 import pandas as pd
 
-
+"""
 #- uncomment for experiments 
 # # Experiments 
 # ### Declare parameters
@@ -12,13 +12,12 @@ import ast #required to in order to parse arguements a lists
 import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
+"""
 
-
-'''
 # comment out when using experiments
 param_numTrees = [70,80,90]
 param_maxDepth = [5,10,15]
-'''
+
 
 
 # ### Load the data (From File )
@@ -113,4 +112,3 @@ print("The AUROC is {:f} and the Average Precision is {:f}".format(auroc, averag
 cdsw.track_metric("numTrees", CV_rfc.best_params_['n_estimators'])
 cdsw.track_metric("maxDepth", CV_rfc.best_params_['max_depth'])
 cdsw.track_metric("auroc", auroc)
-
