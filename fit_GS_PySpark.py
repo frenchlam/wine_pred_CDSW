@@ -125,11 +125,15 @@ print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 # #### Model is 3rd stage of the pipeline
 cvModel.bestModel.write().overwrite().save("models/spark")
 
-!rm -r -f models/spark
-!rm -r -f models/spark_rf.tar
+#bring model back into project and tar it
+!rm -rf models/
 !mkdir models
 !hdfs dfs -get ./models/spark models/
 !tar -cvf models/spark_rf.tar models/spark
+!rm -r -f models/spark
+!mv models/spark_rf.tar spark_rf.tar
+
+cdsw.track_file("spark_rf.tar")
 
 
 # ### Track metrics in Experiments view
@@ -137,6 +141,5 @@ cdsw.track_metric("auroc", auroc)
 cdsw.track_metric("numTrees",cvModel.bestModel.stages[2]._java_obj.getNumTrees())
 cdsw.track_metric("maxDepth",cvModel.bestModel.stages[2]._java_obj.getMaxDepth())
 
-cdsw.track_file("models/spark_rf.tar")
 
 spark.stop()

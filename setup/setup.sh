@@ -10,8 +10,6 @@ echo "created /tmp/wine_pred_hive"
 
 hadoop fs -put /home/cdsw/data/WineNewGBTDataSet.csv /tmp/wine_pred
 echo "copied /home/cdsw/data/WineNewGBTDataSet.csv -> hdfs://tmp/wine_pred"
-hadoop fs -put /home/cdsw/data/WineNewGBTDataSet.csv /tmp/wine_pred_hive
-echo "copied /home/cdsw/data/WineNewGBTDataSet.csv -> hdfs://tmp/wine_pred_hive"
 
 echo "install seaborn and SKlearn"
 pip3 install seaborn sklearn

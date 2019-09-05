@@ -59,16 +59,16 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("quality", StringType(), True)
 ])
 
-"""
+
 #set path to data
 data_path = "/tmp/wine_pred"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
-"""
 
+"""
 # ### or from Hive 
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
-
+"""
 
 # Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
@@ -131,13 +131,15 @@ cdsw.track_metric("aupr", aupr)
 # # Save Model for deployement 
 model.write().overwrite().save("models/spark")
 
-!rm -r -f models/spark
-!rm -r -f models/spark_rf.tar
+#bring model back into project and tar it
+!rm -rf models/
 !mkdir models
 !hdfs dfs -get ./models/spark models/
 !tar -cvf models/spark_rf.tar models/spark
+!rm -r -f models/spark
+!mv models/spark_rf.tar spark_rf.tar
 
-cdsw.track_file("models/spark_rf.tar")
+cdsw.track_file("spark_rf.tar")
 
 spark.stop()
 
