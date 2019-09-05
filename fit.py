@@ -14,11 +14,11 @@ cdsw.track_metric("numTrees",param_numTrees)
 cdsw.track_metric("maxDepth",param_maxDepth)
 cdsw.track_metric("impurity",param_impurity)
 """
+
 # Comment out when using experiments
 param_numTrees= 10
 param_maxDepth= 15
 param_impurity= "gini"
-
 
 
 # # Create Spark Session
@@ -59,10 +59,12 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("quality", StringType(), True)
 ])
 
+"""
 #set path to data
 data_path = "/tmp/wine_pred"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
+"""
 
 # ### or from Hive 
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')

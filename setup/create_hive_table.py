@@ -22,18 +22,18 @@ else :
   print("file found, creating table")
   statement = '''
   CREATE EXTERNAL TABLE IF NOT EXISTS `default`.`wineDS_ext` (  
-  `fixedAcidity` double ,  
-  `volatileAcidity` double ,  
-  `citricAcid` double ,  
-  `residualSugar` double ,  
+  `fixedacidity` double ,  
+  `volatileacidity` double ,  
+  `citricacid` double ,  
+  `residualsugar` double ,  
   `chlorides` double ,  
-  `freeSulfurDioxide` bigint ,  
-  `totalSulfurDioxide` bigint ,  
+  `freesulfurdioxide` bigint ,  
+  `totalsulfurdioxide` bigint ,  
   `density` double ,  
-  `pH` double ,  
+  `ph` double ,  
   `sulphates` double ,  
-  `Alcohol` double ,  
-  `Quality` string )  
+  `alcohol` double ,  
+  `quality` string )  
   ROW FORMAT DELIMITED FIELDS TERMINATED BY ';' 
   STORED AS TextFile LOCATION '{}' 
   '''.format(path)

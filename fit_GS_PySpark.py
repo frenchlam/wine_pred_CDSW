@@ -12,6 +12,7 @@ param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity= "gini"
 
+
 """
 #comment out when using experiments
 param_numTrees = [10,15,20]
@@ -28,6 +29,7 @@ spark = SparkSession \
   .getOrCreate()
 
 
+"""
 # ### Load the data (From File )
 # #### Define Schema
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
@@ -49,7 +51,7 @@ wine_data_raw = spark.read.csv(data_path, schema=schema,sep=';')
 """
 # ### Or Get data from Hive
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
-"""
+
 
 # ### Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
