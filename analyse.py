@@ -25,8 +25,11 @@ from pyspark.sql.types import *
 
 spark = SparkSession \
   .builder \
-  .master('yarn') \
   .appName('wine-quality-analysis') \
+  .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
+  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
+  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
+  .config("spark.hadoop.com.amazonaws.services.s3a.enableV4","true")\
   .getOrCreate()
 
 ### Data does not have schema, so we declare it manually 
@@ -44,7 +47,7 @@ schema = StructType([StructField("fixedAcidity", DoubleType(), True),
   StructField("Quality", StringType(), True)
 ])
 
-data_path = "/tmp/wine_pred"
+data_path = "s3a://mlamairesse/wine_dataset/data/"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
 wine_data_raw.show(3) 

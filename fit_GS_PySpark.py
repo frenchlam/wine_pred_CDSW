@@ -2,7 +2,7 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-
+"""
 #Uncomment for experiments
 #Experiments 
 # ### Declare parameters
@@ -11,25 +11,28 @@ import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity= "gini"
-
-
 """
+
+
 #comment out when using experiments
 param_numTrees = [10,15,20]
 param_maxDepth = [5,10,15]
 param_impurity = "gini"
-"""
+
 
 # # Load Date
 # ### Start PySpark Session
 spark = SparkSession \
   .builder \
-  .master('yarn') \
+  .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
+  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
+  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
+  .config("spark.hadoop.com.amazonaws.services.s3a.enableV4","true")\
   .appName('wine-quality-build-model') \
   .getOrCreate()
 
 
-"""
+
 # ### Load the data (From File )
 # #### Define Schema
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
@@ -45,13 +48,19 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("alcohol", DoubleType(), True),     
   StructField("quality", StringType(), True)])
 
-data_path = "/tmp/wine_pred/WineNewGBTDataSet.csv"
-wine_data_raw = spark.read.csv(data_path, schema=schema,sep=';')
+
+#set path to data
+data_path = "s3a://mlamairesse/wine_dataset/data/"
+data_file = "WineNewGBTDataSet.csv"
+#data_path = "/tmp/wine_pred"
+#data_file = "WineNewGBTDataSet.csv"
+wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
+
 
 """
 # ### Or Get data from Hive
 wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
-
+"""
 
 # ### Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
@@ -120,7 +129,7 @@ auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
 aupr =  evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
-
+'''
 # ## Save Model for deployement 
 # #### Model is 3rd stage of the pipeline
 cvModel.bestModel.write().overwrite().save("models/spark")

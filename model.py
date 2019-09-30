@@ -5,6 +5,11 @@ from pyspark.ml import PipelineModel
 spark = SparkSession.builder \
       .appName("wine-quality-model") \
       .master("local[*]") \
+      .config("spark.driver.memory","4g")\
+      .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
+      .config("spark.hadoop.fs.s3a.metadatastore.impl","org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore")\
+      .config("spark.hadoop.fs.s3a.delegation.token.binding","")\
+      .config("spark.hadoop.yarn.resourcemanager.principal","mlamairesse")\
       .getOrCreate()
     
 model = PipelineModel.load("file:///home/cdsw/models/spark")

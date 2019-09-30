@@ -24,7 +24,10 @@ param_impurity= "gini"
 # # Create Spark Session
 spark = SparkSession \
   .builder \
-  .master('yarn') \
+  .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
+  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
+  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
+  .config("spark.hadoop.com.amazonaws.services.s3a.enableV4","true")\
   .appName('wine-quality-build-model') \
   .getOrCreate()
 
@@ -61,8 +64,10 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
 
 
 #set path to data
-data_path = "/tmp/wine_pred"
+data_path = "s3a://mlamairesse/wine_dataset/data/"
 data_file = "WineNewGBTDataSet.csv"
+#data_path = "/tmp/wine_pred"
+#data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
 
 """
@@ -72,7 +77,6 @@ wine_data_raw = spark.sql('''Select * from default.wineds_ext''')
 
 # Cleanup - Remove invalid data
 wine_data = wine_data_raw.filter(wine_data_raw.quality != "1")
-
 
 
 # # Build a classification model using MLLib
@@ -129,15 +133,15 @@ cdsw.track_metric("auroc", auroc)
 cdsw.track_metric("aupr", aupr)
 
 # # Save Model for deployement 
-model.write().overwrite().save("models/spark")
+#model.write().overwrite().save("models/spark")
 
 #bring model back into project and tar it
-!rm -rf models/
-!mkdir models
-!hdfs dfs -get ./models/spark models/
-!tar -cvf models/spark_rf.tar models/spark
-!rm -r -f models/spark
-!mv models/spark_rf.tar spark_rf.tar
+#!rm -rf models/
+#!mkdir models
+#!hdfs dfs -get ./models/spark models/
+#!tar -cvf models/spark_rf.tar models/spark
+#!rm -r -f models/spark
+#!mv models/spark_rf.tar spark_rf.tar
 
 cdsw.track_file("spark_rf.tar")
 
