@@ -5,7 +5,7 @@ from pyspark.ml import PipelineModel
 save_path = "./wine_predicted.parquet"
 
 spark = SparkSession.builder \
-      .appName("wine-quality-setup") \
+      .appName("Wine_pred-Batch_Score") \
       .master("yarn") \
       .getOrCreate()
 
