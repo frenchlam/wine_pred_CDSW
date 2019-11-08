@@ -23,7 +23,7 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
   StructField("alcohol", DoubleType(), True)
 ])
 
-'''
+
 ## From file ###
 data_path = "/tmp/wine_pred/WineNewGBTDataSet.csv"
 wine_raw_df = spark.read.csv(data_path, schema=schema,sep=';')
@@ -32,6 +32,7 @@ wine_df = wine_raw_df.drop('quality')
 ## from Hive ###
 wine_df = spark.sql('''SELECT * FROM default.wineds_ext_nolabel''')
 print("Show first 5 lines")
+'''
 wine_df.show(5)
 
 ## load Model 
