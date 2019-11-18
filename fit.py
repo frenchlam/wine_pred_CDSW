@@ -21,15 +21,17 @@ param_maxDepth= 15
 param_impurity= "gini"
 
 
-# # Create Spark Session
-spark = SparkSession \
-  .builder \
+spark = SparkSession\
+  .builder\
+  .appName('wine-quality-analysis')\
+  .config("spark.executor.memory","2g")\
+  .config("spark.executor.cores","2")\
+  .config("spark.executor.instances","3")\
+  .config("spark.hadoop.fs.s3a.metadatastore.impl","org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore")\
   .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
-  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
-  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
-  .config("spark.hadoop.com.amazonaws.services.s3a.enableV4","true")\
-  .appName('wine-quality-build-model') \
+  .config("spark.hadoop.fs.s3a.delegation.token.binding","")\
   .getOrCreate()
+
 
 # # Load the data 
 # ### From File
