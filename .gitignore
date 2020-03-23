@@ -1,0 +1,8 @@
+!.gitignore
+.viminfo
+.Rprofile
+.cache/
+.conda/
+.ipython/
+.local/
+.pip/

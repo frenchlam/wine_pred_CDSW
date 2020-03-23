@@ -1,7 +1,8 @@
 import os 
-DL_s3bucket = os.environ["DL_S3_BUCKET"]
-path_hive_labeled = DL_s3bucket+'/tmp/wine_pred/'
-path_hive_predict = DL_s3bucket+'/tmp/wine_pred_hive/'
+#DL_s3bucket = os.environ["DL_S3_BUCKET"]
+DL_s3bucket="s3a://mlam-cdp-bucket/mlam-dl/"
+path_hive_labeled = DL_s3bucket+'tmp/wine_pred/'
+path_hive_predict = DL_s3bucket+'tmp/wine_pred_hive/'
 
 
 from pyspark.sql import SparkSession
@@ -11,9 +12,7 @@ print("Start Spark session :")
 spark = SparkSession \
   .builder \
   .appName('wine-quality-create-table') \
-  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
-  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
-  .config("spark.hadoop.fs.s3a.metadatastore.impl","org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore")\
+  .config("spark.yarn.access.hadoopFileSystems",DL_s3bucket) \
   .getOrCreate()
   
 print("started")
@@ -39,7 +38,7 @@ data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
 wine_data_raw.show(3) 
 
-wine_data_raw.write.mode('overwrite').parquet("s3a://all-se-env-1026/tmp/wine_pred/")
+wine_data_raw.write.mode('overwrite').parquet(path_hive_labeled)
 
 
 
@@ -47,23 +46,22 @@ wine_data_raw.write.mode('overwrite').parquet("s3a://all-se-env-1026/tmp/wine_pr
 #Create table of labeled data for training 
 spark.sql('''DROP TABLE IF EXISTS `default`.`{}`'''.format('wineds_ext'))
 statement = '''
-CREATE EXTERNAL TABLE IF NOT EXISTS `default`.`{}` (  
+CREATE EXTERNAL TABLE IF NOT EXISTS `default`.`wineds_ext` (  
 `fixedacidity` double ,  
 `volatileacidity` double ,  
 `citricacid` double ,  
 `residualsugar` double ,  
 `chlorides` double ,  
-`freesulfurdioxide` bigint ,  
-`totalsulfurdioxide` bigint ,  
+`freesulfurdioxide` double ,  
+`totalsulfurdioxide` double ,  
 `density` double ,  
 `ph` double ,  
 `sulphates` double ,  
 `alcohol` double ,  
 `quality` string )  
-ROW FORMAT DELIMITED FIELDS TERMINATED BY ';' 
-STORED AS TextFile 
+STORED AS parquet 
 LOCATION '{}' 
-'''.format('wineds_ext', path_hive_labeled,  )
+'''.format(path_hive_labeled)
 spark.sql(statement) 
 
 print("First 5 rows of labeled data - hive")
@@ -93,8 +91,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS `default`.`{}` (
 `citricacid` double ,  
 `residualsugar` double ,  
 `chlorides` double ,  
-`freesulfurdioxide` bigint ,  
-`totalsulfurdioxide` bigint ,  
+`freesulfurdioxide` double ,  
+`totalsulfurdioxide` double ,  
 `density` double ,  
 `ph` double ,  
 `sulphates` double ,  

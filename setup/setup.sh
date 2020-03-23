@@ -15,4 +15,4 @@ echo "install seaborn and SKlearn"
 pip3 install seaborn sklearn
 
 echo "Create Hive Table"
-spark-submit /home/cdsw/setup/create_hive_table.py
+python3 /home/cdsw/setup/create_hive_table.py
