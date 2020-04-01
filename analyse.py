@@ -10,7 +10,7 @@ spark = SparkSession\
   .appName('wine-quality-analysis')\
   .config("spark.executor.memory","2g")\
   .config("spark.executor.cores","2")\
-  .config("spark.executor.instances","3")\
+  .config("spark.executor.instances","2")\
   .config("spark.hadoop.fs.s3a.metadatastore.impl","org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore")\
   .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
   .config("spark.hadoop.fs.s3a.delegation.token.binding","")\

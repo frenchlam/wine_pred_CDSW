@@ -2,7 +2,7 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-"""#uncomment for experiments
+#uncomment for experiments
 # # Get parameters for experiments
 # Declare parameters 
 param_numTrees= int(sys.argv[1])
@@ -13,12 +13,12 @@ param_impurity=sys.argv[3]
 cdsw.track_metric("numTrees",param_numTrees)
 cdsw.track_metric("maxDepth",param_maxDepth)
 cdsw.track_metric("impurity",param_impurity)
-"""
+
 
 # Comment out when using experiments
-param_numTrees= 10
-param_maxDepth= 15
-param_impurity= "gini"
+#param_numTrees= 10
+#param_maxDepth= 15
+#param_impurity= "gini"
 
 
 spark = SparkSession\

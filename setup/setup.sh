@@ -11,8 +11,8 @@ echo "created /tmp/wine_pred_hive"
 hadoop fs -put /home/cdsw/data/WineNewGBTDataSet.csv /tmp/wine_pred
 echo "copied /home/cdsw/data/WineNewGBTDataSet.csv -> hdfs://tmp/wine_pred"
 
-echo "install seaborn and SKlearn"
-pip3 install seaborn sklearn
+echo "install requierements"
+pip3 install -r ~/requierements.txt
 
 echo "Create Hive Table"
 python3 /home/cdsw/setup/create_hive_table.py

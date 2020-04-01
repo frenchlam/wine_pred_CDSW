@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pip3 install sklearn
+pip3 install -r requirements.txt
 
 if [ -f "spark_rf.tar" ]
 then
