@@ -2,7 +2,7 @@
 
 pip3 install -r requirements.txt
 
-if ![ -d "models" ]
+if ! [ -d "models" ]
 then 
   if [ -f "spark_rf.tar" ]
   then
