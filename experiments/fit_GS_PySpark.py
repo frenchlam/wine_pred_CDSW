@@ -3,9 +3,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
 """
-#Uncomment for experiments
-#Experiments 
-# ### Declare parameters
+# ## Get parameters for experiments 
+# ### Note uncomment for experiments
 import ast #required to in order to parse arguements a lists
 import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
@@ -13,25 +12,37 @@ param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity= "gini"
 """
 
+# get Environment bucket location
+import os
+ENV_BUCKET="s3a://demo-aws-2/datalake/"
+
+try : 
+  DL_s3bucket=os.environ["ENV_BUCKET"]
+except KeyError: 
+  DL_s3bucket=ENV_BUCKET
+  os.environ["ENV_BUCKET"] = ENV_BUCKET
 
 #comment out when using experiments
 param_numTrees = [10,15,20]
 param_maxDepth = [5,10,15]
 param_impurity = "gini"
 
+#track parameters in experiments
+cdsw.track_metric("numTrees",param_numTrees)
+cdsw.track_metric("maxDepth",param_maxDepth)
+cdsw.track_metric("impurity",param_impurity)
+
 
 # # Load Date
 # ### Start PySpark Session
-spark = SparkSession \
-  .builder \
-  .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
-  .config("spark.hadoop.fs.s3a.impl","org.apache.hadoop.fs.s3a.S3AFileSystem")\
-  .config("spark.hadoop.fs.s3a.connection.ssl.enabled","true")\
-  .config("spark.hadoop.com.amazonaws.services.s3a.enableV4","true")\
-  .appName('wine-quality-build-model') \
+spark = SparkSession\
+  .builder\
+  .appName('wine-quality-analysis') \
+  .config("spark.executor.memory","2g") \
+  .config("spark.executor.cores","2") \
+  .config("spark.executor.instances","3") \
+  .config("spark.yarn.access.hadoopFileSystems",DL_s3bucket) \
   .getOrCreate()
-
-
 
 # ### Load the data (From File )
 # #### Define Schema
@@ -50,12 +61,10 @@ schema = StructType([StructField("fixedacidity", DoubleType(), True),
 
 
 #set path to data
-data_path = "s3a://mlamairesse/wine_dataset/data/"
+#set path to data
+data_path = "file:///home/cdsw/data/"
 data_file = "WineNewGBTDataSet.csv"
-#data_path = "/tmp/wine_pred"
-#data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
-
 
 """
 # ### Or Get data from Hive
@@ -129,26 +138,24 @@ auroc = evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderROC"})
 aupr =  evaluator.evaluate(predictions, {evaluator.metricName: "areaUnderPR"})
 print("The AUROC is {:f} and the AUPR is {:f}".format(auroc, aupr))
 
-'''
-# ## Save Model for deployement 
-# #### Model is 3rd stage of the pipeline
-cvModel.bestModel.write().overwrite().save("models/spark")
-
-#bring model back into project and tar it
-!rm -rf models/
-!mkdir models
-!hdfs dfs -get ./models/spark models/
-!tar -cvf models/spark_rf.tar models/spark
-!rm -r -f models/spark
-!mv models/spark_rf.tar spark_rf.tar
-
-cdsw.track_file("spark_rf.tar")
-
 
 # ### Track metrics in Experiments view
 cdsw.track_metric("auroc", auroc)
 cdsw.track_metric("numTrees",cvModel.bestModel.stages[2]._java_obj.getNumTrees())
 cdsw.track_metric("maxDepth",cvModel.bestModel.stages[2]._java_obj.getMaxDepth())
+
+# ## Save Model for deployement 
+# #### Model is 3rd stage of the pipeline
+cvModel.bestModel.write().overwrite().save(DL_s3bucket+"tmp/models/spark")
+
+!mv models/ models_OLD/
+!mkdir models
+!hdfs dfs -get $ENV_BUCKET/tmp/models/
+!tar -cvf models/spark_rf_grid.tar models/spark
+!mv models/spark_rf_grid.tar spark_rf_grid.tar
+!rm -rf models/
+
+cdsw.track_file("spark_rf.tar")
 
 
 spark.stop()
