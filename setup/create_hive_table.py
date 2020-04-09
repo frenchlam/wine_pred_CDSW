@@ -1,9 +1,15 @@
-import os 
-#DL_s3bucket = os.environ["DL_S3_BUCKET"]
-DL_s3bucket="s3a://mlam-cdp-bucket/mlam-dl/"
+import os
+
+### Set Environment bucket location for RW acess 
+ENV_BUCKET="s3a://demo-aws-2/datalake/"
+try : 
+  os.environ["ENV_BUCKET"]
+  DL_s3bucket=ENV_BUCKET
+except KeyError: 
+  DL_s3bucket=ENV_BUCKET
+  
 path_hive_labeled = DL_s3bucket+'tmp/wine_pred/'
 path_hive_predict = DL_s3bucket+'tmp/wine_pred_hive/'
-
 
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *

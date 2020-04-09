@@ -11,9 +11,6 @@ spark = SparkSession\
   .config("spark.executor.memory","2g")\
   .config("spark.executor.cores","2")\
   .config("spark.executor.instances","2")\
-  .config("spark.hadoop.fs.s3a.metadatastore.impl","org.apache.hadoop.fs.s3a.s3guard.NullMetadataStore")\
-  .config("spark.hadoop.fs.s3a.aws.credentials.provider","org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider")\
-  .config("spark.hadoop.fs.s3a.delegation.token.binding","")\
   .getOrCreate()
   
 print("started")
@@ -59,7 +56,7 @@ schema = StructType([
   StructField("Quality", StringType(), True)
 ])
 
-data_path = "s3a://mlamairesse/wine_dataset/data/"
+data_path = "file:///home/cdsw/data/"
 data_file = "WineNewGBTDataSet.csv"
 wine_data_raw = spark.read.csv(data_path+'/'+data_file, schema=schema,sep=';')
 wine_data_raw.show(3)
