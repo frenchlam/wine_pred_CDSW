@@ -4,14 +4,16 @@ from pyspark.sql.types import *
 
 # ## Get parameters for experiments 
 # ### Note uncomment for experiments
-#param_numTrees= int(sys.argv[1])
-#param_maxDepth=int(sys.argv[2])
-#param_impurity=sys.argv[3]
+param_numTrees= int(sys.argv[1])
+param_maxDepth=int(sys.argv[2])
+param_impurity=sys.argv[3]
 
+'''
 ### Comment out when using experiments - debug
 param_numTrees= 10
 param_maxDepth= 15
 param_impurity= "gini"
+''''
 
 # get Environment bucket location
 import os
