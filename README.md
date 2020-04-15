@@ -16,17 +16,7 @@ Used: Python, Spark, seaborn
     Once the session is launched run : 
     - `!git fetch origin`
     - `!git checkout CML`
-    
-    
-  2. Create an Environment Variable describing the bucket linked to CDP environement of the workspace
-  
-    a. Find the bucket :
-    In the CDP console go to [NAME OF YOUR ENV]-> "Data Lake"-> "Cloud Storage"and copy the bucket name
-    
-    b. Create an Environement Variable with containing the bucket name. 
-    - Go to "Settings" -> "Engine" -> "Environmental Variables"  
-    - Create an env variable called "ENV_BUCKET" and give it the path of your environement bucket  
-
+     
 
 #### FOR CDSW  
   Make sure that: 
@@ -37,7 +27,7 @@ Used: Python, Spark, seaborn
   - PYSPARK_DRIVER_PYTHON - For the driver (by default : /usr/local/bin/python3)
   - PYSPARK3_PYTHON - for executors (Usualy "python3 )
 
-## (Optional) - run setup script 
+## Run setup script 
 The setup script creates a hive table that can be used to showcase Hive <=> CML integration  
 - Open a session "Open Workbench" -> "Launch Session"
 - Run setup : in session  `!./setup/setup.sh` - in terminal `./setup/setup.sh`
@@ -45,13 +35,14 @@ The setup script creates a hive table that can be used to showcase Hive <=> CML 
 
 ## Usage 
  
-### 1. Run descriptive anylisis of data
+### 1. Run descriptive analysis of data
 Start a python3 session using Workbensh editor
-run "analyse.py"
+run "01_analyse.py"
 
-### 2. create a model  
+### 2. Create a model - using experiements
 #### With pyspark 
 Start a Python 3 session using Workbench editor
+In the 02_experiments folder, run
 Run "fit.py: 
 
 Note : using RandomForest from spark ML library 
@@ -74,10 +65,15 @@ params:
 
 ## 3. Create a model in the Model API
   * Give the model a name and description
-  * Confifure runtime params 
-    - Script: "model.py"
+  * Configure runtime params 
+    - Script: "03_model.py"
     - Function : "predict"
-    - (optional) give example input :   
+    - Give example input :   
 {"feature": "7.4;0.7;0;1.9;0.076;11;34;0.9978;3.51;0.56;9.4"}
 {"feature": "7.3;0.65;0.0;1.2;0.065;15.0;21.0;0.9946;3.39;0.47;10.0"}
-  
+
+## 4. Batch score using Jobs ( note - must have run setup script to create Hive tables )
+  * Go to Jobs 
+  * Create a new Job with parameters 
+      - Script : 04_score_batch.py
+      - 1CPU / 2Gb RAM

@@ -2,7 +2,17 @@ import cdsw
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 
-"""
+
+# get Environment bucket location
+import os
+ENV_BUCKET="s3a://demo-aws-2/datalake/"
+
+try : 
+  DL_s3bucket=os.environ["STORAGE"]+"/datalake/"
+except KeyError: 
+  DL_s3bucket=ENV_BUCKET
+
+
 # ## Get parameters for experiments 
 # ### Note uncomment for experiments
 import ast #required to in order to parse arguements a lists
@@ -10,22 +20,13 @@ import sys
 param_numTrees= ast.literal_eval(sys.argv[1])
 param_maxDepth= ast.literal_eval(sys.argv[2])
 param_impurity= "gini"
-"""
 
-# get Environment bucket location
-import os
-ENV_BUCKET="s3a://demo-aws-2/datalake/"
-
-try : 
-  DL_s3bucket=os.environ["ENV_BUCKET"]
-except KeyError: 
-  DL_s3bucket=ENV_BUCKET
-  os.environ["ENV_BUCKET"] = ENV_BUCKET
-
+'''
 #comment out when using experiments
 param_numTrees = [10,15,20]
 param_maxDepth = [5,10,15]
 param_impurity = "gini"
+'''
 
 #track parameters in experiments
 cdsw.track_metric("numTrees",param_numTrees)
@@ -150,7 +151,7 @@ cvModel.bestModel.write().overwrite().save(DL_s3bucket+"tmp/models/spark")
 
 !mv models/ models_OLD/
 !mkdir models
-!hdfs dfs -get $ENV_BUCKET/tmp/models/
+!hdfs dfs -get $STORAGE/datalake/tmp/models/
 !tar -cvf models/spark_rf_grid.tar models/spark
 !mv models/spark_rf_grid.tar spark_rf_grid.tar
 !rm -rf models/
