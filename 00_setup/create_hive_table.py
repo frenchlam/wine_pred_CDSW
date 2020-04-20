@@ -6,7 +6,21 @@ ENV_BUCKET="s3a://demo-aws-2/datalake/"
 try : 
   DL_s3bucket=os.environ["STORAGE"]+"/datalake/"
 except KeyError: 
-  DL_s3bucket=ENV_BUCKET
+  import xml.etree.ElementTree as ET
+  tree = ET.parse('/etc/hadoop/conf/hive-site.xml')
+  root = tree.getroot()
+  
+  s3_bucket = ''
+  for prop in root.findall('property'):
+    if prop.find('name').text == "hive.metastore.warehouse.dir":
+      s3_bucket = "s3a://" + prop.find('value').text.split("/")[2] 
+      ENV_BUCKET = s3_bucket
+      DL_s3bucket = ENV_BUCKET+"/datalake/"
+      os.environ["STORAGE"]=DL_s3bucket
+  
+  if s3_bucket == '' :
+    DL_s3bucket=ENV_BUCKET
+    
   
 path_hive_labeled = DL_s3bucket+'tmp/wine_pred/'
 path_hive_predict = DL_s3bucket+'tmp/wine_pred_hive/'
