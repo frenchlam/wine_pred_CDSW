@@ -13,7 +13,7 @@ param_impurity=sys.argv[3]
 param_numTrees= 10
 param_maxDepth= 15
 param_impurity= "gini"
-''''
+'''
 
 # get Environment bucket location
 import os

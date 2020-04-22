@@ -12,17 +12,17 @@ spark = SparkSession.builder \
 model = PipelineModel.load("file:///home/cdsw/models/spark")
 
 
-schema = StructType([StructField("fixedAcidity", DoubleType(), True),     
-  StructField("volatileAcidity", DoubleType(), True),     
-  StructField("citricAcid", DoubleType(), True),     
-  StructField("residualSugar", DoubleType(), True),     
+schema = StructType([StructField("fixedacidity", DoubleType(), True),     
+  StructField("volatileacidity", DoubleType(), True),     
+  StructField("citricacid", DoubleType(), True),     
+  StructField("residualsugar", DoubleType(), True),     
   StructField("chlorides", DoubleType(), True),     
-  StructField("freeSulfurDioxide", DoubleType(), True),     
-  StructField("totalSulfurDioxide", DoubleType(), True),     
+  StructField("freesulfurdioxide", DoubleType(), True),     
+  StructField("totalsulfurdioxide", DoubleType(), True),     
   StructField("density", DoubleType(), True),     
-  StructField("pH", DoubleType(), True),     
+  StructField("ph", DoubleType(), True),     
   StructField("sulphates", DoubleType(), True),     
-  StructField("Alcohol", DoubleType(), True)
+  StructField("alcohol", DoubleType(), True),     
 ])
 
 

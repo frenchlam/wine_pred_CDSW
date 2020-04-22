@@ -22,18 +22,18 @@ param_maxDepth = [5,10,15]
 
 # ### Load the data (From File )
 input_file = "data/WineNewGBTDataSet.csv"
-col_Names=["fixedAcidity",
-    "volatileAcidity",
-    "citricAcid",
-    "residualSugar",
+col_Names=["fixedacidity",
+    "volatileacidity",
+    "citricacid",
+    "residualsugar",
     "chlorides",
-    "freeSulfurDioxide",
-    "totalSulfurDioxide",
+    "freesulfurdioxide",
+    "totalsulfurdioxide",
     "density",
-    "pH",
+    "ph",
     "sulphates",
-    "Alcohol",
-    "Quality"]
+    "alcohol",
+    "quality"]
 
 
 wine_df = pd.read_csv(input_file,sep=";",header=None, names=col_Names)

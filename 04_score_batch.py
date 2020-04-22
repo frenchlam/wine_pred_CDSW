@@ -6,7 +6,6 @@ from pyspark.ml import PipelineModel
 # get Environment bucket location
 import os
 ENV_BUCKET="s3a://demo-aws-2/datalake/"
-
 try : 
   DL_s3bucket=os.environ["STORAGE"]+"/datalake/"
 except KeyError: 
@@ -20,6 +19,7 @@ spark = SparkSession.builder \
   .config("spark.executor.cores","2") \
   .config("spark.executor.instances","3") \
   .config("spark.yarn.access.hadoopFileSystems",DL_s3bucket) \
+  .config("spark.hadoop.fs.s3a.s3guard.ddb.region","us-east-1")\
   .getOrCreate()
 
 schema = StructType([StructField("fixedacidity", DoubleType(), True),     
@@ -68,7 +68,13 @@ result.select("fixedacidity",
           "sulphates",
           "alcohol",
           "probability",
-          "prediction").write.mode('overwrite').save(save_path, format="parquet")
+          "prediction") \
+          .coalesce(2).write.parquet(save_path, mode='overwrite')
 
+# Save result
+!mkdir -p jobs/batch-score/$(date +"%d-%m-%Y+%k:%M")
+!hdfs dfs -get $STORAGE/datalake/tmp/wine_batch_predict jobs/batch-score/"$(date +"%d-%m-%Y+%k:%M")"
+!tar -cvf jobs/batch-score.tar jobs/batch-score/"$(date +"%d-%m-%Y+%k:%M")"
+!rm -rf jobs/batch-score/
 
-spark.stop()
+# spark.stop()

@@ -31,8 +31,8 @@ param_impurity = "gini"
 '''
 
 #track parameters in experiments
-cdsw.track_metric("numTrees",param_numTrees)
-cdsw.track_metric("maxDepth",param_maxDepth)
+cdsw.track_metric("numTrees",str(param_numTrees))
+cdsw.track_metric("maxDepth",str(param_maxDepth))
 cdsw.track_metric("impurity",param_impurity)
 
 
@@ -161,4 +161,4 @@ cvModel.bestModel.write().overwrite().save(DL_s3bucket+"tmp/models/spark")
 cdsw.track_file("spark_rf.tar")
 
 
-spark.stop()
+#spark.stop()
